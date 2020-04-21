@@ -5,7 +5,8 @@ datasources:
   type: influxdb
   access: proxy
   url: ${INFLUXDB_URL}
-  password: ${INFLUXDB_PASSWORD}
+  secureJsonData:
+    password: ${INFLUXDB_PASSWORD}
   user: ${INFLUXDB_USER}
   database: ${INFLUXDB_DB}
   isDefault: true

@@ -17,7 +17,6 @@ services:
       test: ["CMD", "curl", "-G", "http://localhost:${INFLUXDB_HTTP_PORT}/ping"]
       interval: 5s
       retries: 10
-
     # Internal network for the containers
     networks:
       - 'docker_stack'
@@ -49,12 +48,34 @@ services:
       test: ["CMD", "curl", "-G", "http://localhost:${GRAFANA_HTTP_PORT}/api/health"]
       interval: 5s
       retries: 10
+
     # Internal network for the containers
     networks:
       - 'docker_stack'
     # Dependencies for this service
     depends_on:
       - influxdb
+
+  # Short lived container which executes the startup scripts and dies
+  configure_stack:
+      container_name: configure_stack
+      image: python:latest
+      environment:
+        - GRAFANA_HTTP_PORT=${GRAFANA_HTTP_PORT}
+        - INFLUXDB_DATA_PORT=${INFLUXDB_HTTP_PORT}
+      volumes:
+        # drive containing the startup config scripts
+        - "./config/scripts:/tmp"
+      # Wait for InfluxDB, Grafana to start up, and then execute the script
+      # 'tr -d' will remove all the \r chars in the script which may be left back when developing on windows box
+      # NOTE: Since the startup script(main service) in the docker container exits early, the container dies after that
+      command: ['/bin/bash', '-c', 'cat /tmp/configure_stack.sh | tr -d "\r" | bash']
+      # Internal network for the containers
+      networks:
+        - 'docker_stack'
+      depends_on:
+        - grafana
+        - influxdb
 
 # network connectors used in the docker env
 networks:
